@@ -77,13 +77,14 @@ class Graph:
             self.add_edge(edge, from_label, to_label)
 
     # Метод для нахождения примерного местоположения на графе
-    def find_route(self, start_label: str, distance: float, precision: float) -> Tuple[str, List[Tuple[float, float, float]]]:
+    def find_route(self, start_label: str, distance: float, precision: float) -> Tuple[str, float, List[Tuple[float, float, float]]]:
         # Проверяем, что начальная вершина существует
         if start_label not in self.vertices:
             raise ValueError("Начальной вершины в графе не существует.")
 
         current_label: str = start_label    # Метка текущей вершины
         remaining_distance: float = distance # Дистанция, которую нужно пройти
+        count_distance: float = 0.0  # Накопленное пройденное расстояние
 
         # Перебираем рёбра графа
         for (from_label, to_label), edge in self.edges.items():
@@ -94,7 +95,10 @@ class Graph:
                 # Рассчитываем длину ребра
                 edge_length: float = self._distance(from_vertex, to_vertex)
 
-                if remaining_distance <= edge_length:
+                if count_distance >= edge_length:
+                    """ Мне кажется я не так понял задание. 
+                     Но по моему если накапливать расстояние то выйдет тоже самое мы так же уйдем в рекурсию
+                    """
                     # Если оставшаяся дистанция помещается на текущем ребре
                     # Вычислим пропорцию пути на ребре
                     ratio: float = remaining_distance / edge_length
@@ -102,11 +106,14 @@ class Graph:
                     approximate_coords: List[Tuple[float, float, float]] = self._interpolate_coordinates(from_vertex, to_vertex, ratio, precision)
                     # Округляем координаты до 3 знаков
                     rounded_coords = [(round(x, 3), round(y, 3), round(z, 3)) for x, y, z in approximate_coords]
+                    # Возвращаем пройденное расстояние
+                    count_distance += remaining_distance
                     # Возвращаем метку ребра и координаты сектора
-                    return edge.label, rounded_coords
+                    return edge.label,count_distance, rounded_coords
                 else:
-                    # Если расстояние больше длины ребра, переходим к следующему ребру
-                    remaining_distance -= edge_length
+                    # Если оставшееся расстояние больше длины ребра
+                    count_distance += edge_length #Увеличиваем накопленное расстояние
+                    remaining_distance -= edge_length #Уменьшаем оставшееся расстояние
                     current_label = to_label
 
         # Если расстояние превышает длину всех рёбер
@@ -142,10 +149,10 @@ vertexB = Vertex('B', 20, 0, 0)
 vertexC = Vertex('C', 12, 12, 12)
 vertexD = Vertex('D', 12, 12, 20)
 
-# Создаем рёбра с их метками
-edgeAB = Edge('10')
-edgeBC = Edge('20')
-edgeCD = Edge('30')
+# Создаем название секции с метками(название секций "секция"_"номер секции")
+edgeAB = Edge('c_10')
+edgeBC = Edge('c_20')
+edgeCD = Edge('c_30')
 
 # Создаем граф
 graph = Graph()
@@ -161,7 +168,7 @@ graph.add_edges(
 )
 
 # Ищем примерное местоположение на графе
-# Старт из вершины 'A', проходим расстояние 18, точность = 0.2
+# Старт из вершины 'A', проходим расстояние 21, точность = 0.2
 result = graph.find_route('A', 21, 0.2)
 
 # Вывод результата
